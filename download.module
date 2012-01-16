@@ -211,10 +211,20 @@ function download_download($field_info) {
   include $lib_path . '/pclzip.lib.php';
   $archive = new PclZip(file_directory_temp() . '/' . $nid . '-' . $delta . '.zip');
 
+  $field_name = 'download';
   $files = array();
   $node = node_load($nid);
+  $instances = field_info_instances('node', $node->type);
 
-  $fields = $node->field_download[LANGUAGE_NONE][$delta]['download_fields'];
+  foreach ($instances as $instance) {
+    $field_info = field_info_field($instance['field_name']);
+
+    if ($field_info['type'] == 'download_link') {
+      $field_name = $instance['field_name'];
+    }
+  }
+
+  $fields = $node->{$field_name}[LANGUAGE_NONE][$delta]['download_fields'];
   $fieldnames = array_filter(explode(';', $fields));
 
   foreach ($fieldnames as $fieldname) {
