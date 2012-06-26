@@ -20,6 +20,16 @@ function download_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_permission().
+ */
+function download_permission() {
+  return array(
+    'see download link' => array(
+      'title' => t('See download link'),
+    ),
+  );
+}
 
 /**
  * Implements hook_field_info().
