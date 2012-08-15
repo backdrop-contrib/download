@@ -271,13 +271,18 @@ function download_download($field_info) {
       }
     }
   }
-  $tmp_file = tempnam(file_directory_temp() . '/', $filename);
-  $archive = new PclZip($tmp_file);
-  $archive->add($files, PCLZIP_OPT_REMOVE_ALL_PATH);
+  
+  $filename = $filename . '.zip';
+  $tmp_file = file_save_data('', 'temporary://' . $filename);
+  $tmp_file->status = 0;
+  $file = file_save($tmp_file);
+  $archive = new PclZip(drupal_realpath($file->uri));
+  $archive->add($files, PCLZIP_OPT_REMOVE_ALL_PATH);  
+  
   header("Content-Type: application/force-download");
   header('Content-Description: File Transfer');
-  header('Content-Disposition: inline; filename=' . $filename . '.zip');
-  readfile($tmp_file);
+  header('Content-Disposition: inline; filename=' . $filename);
+  readfile(drupal_realpath($file->uri));
   exit();
 }
 
