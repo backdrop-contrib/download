@@ -66,15 +66,15 @@ function download_field_instance_settings_form($field, $instance) {
     '#title' => t('Filename for the download'),
     '#default_value' => $settings['filename'],
   );
-  
+
   if (module_exists('token')) {
     $form['tokens'] = array(
       '#theme' => 'token_tree',
-      '#token_types' => array('node'), 
-      '#global_types' => FALSE, 
+      '#token_types' => array('node'),
+      '#global_types' => FALSE,
     );
   }
-  
+
   return $form;
 }
 
@@ -200,7 +200,11 @@ function download_field_widget_form(&$form, &$form_state, $field, $instance, $la
 }
 
 function download_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
-  foreach ($items as $key => $item) {
+
+  $tmp_items = $items;
+  $items = NULL;
+
+  foreach ($tmp_items as $key => $item) {
     if (isset($item['download_fields'])) {
       $fields = '';
       foreach ($item['download_fields'] as $fieldname => $value) {
@@ -208,11 +212,14 @@ function download_field_presave($entity_type, $entity, $field, $instance, $langc
           $fields .= $fieldname . ';';
         }
       }
-      if ($fields == '') {
-        unset($items[$key]);
-      }
-      else {
+      if ($fields != '') {
+
+        if (!is_array($items)) {
+          $items = array();
+        }
+
         $items[$key]['download_fields'] = $fields;
+        $items[$key]['download_label'] = $tmp_items[$key]['download_label'];
       }
     }
   }
@@ -252,7 +259,7 @@ function download_download($field_info) {
 
     if ($field_info['type'] == 'download_link') {
       $field_name = $instance['field_name'];
-      
+
       if(!empty($instance['settings']['filename'])){
         $filename = _download_get_filename($instance['settings']['filename'], $node);
       }
@@ -271,14 +278,14 @@ function download_download($field_info) {
       }
     }
   }
-  
+
   $filename = $filename . '.zip';
   $tmp_file = file_save_data('', 'temporary://' . $filename);
   $tmp_file->status = 0;
   $file = file_save($tmp_file);
   $archive = new PclZip(drupal_realpath($file->uri));
-  $archive->add($files, PCLZIP_OPT_REMOVE_ALL_PATH);  
-  
+  $archive->add($files, PCLZIP_OPT_REMOVE_ALL_PATH);
+
   header("Content-Type: application/force-download");
   header('Content-Description: File Transfer');
   header('Content-Disposition: inline; filename=' . $filename);
@@ -287,9 +294,9 @@ function download_download($field_info) {
 }
 
 function _download_get_filename($filename, $node) {
-  
+
   $fn = token_replace(check_plain($filename),array('node'  =>  $node));
   $fn = preg_replace("/[^a-zA-Z0-9\.\-_]/", "", $fn);
-  
+
   return $fn;
 }
