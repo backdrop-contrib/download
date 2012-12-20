@@ -255,7 +255,7 @@ function download_download($bundle, $field_info) {
 
   $lib_path = libraries_get_path('pclzip');
   if (!is_dir($lib_path)) {
-    $uri_info = entity_class_uri($entity);
+    $uri_info = entity_uri($entity_type, $entity);
     drupal_goto($uri_info['path']);
   }
 
