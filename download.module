@@ -208,11 +208,18 @@ function download_field_presave($entity_type, $entity, $field, $instance, $langc
   foreach ($tmp_items as $key => $item) {
     if (isset($item['download_fields'])) {
       $fields = '';
-      foreach ($item['download_fields'] as $fieldname => $value) {
-        if ($value != '0') {
-          $fields .= $fieldname . ';';
+      // When saving with widget, transform array with download_fields to string
+      if(is_array($item['download_fields'])){
+        foreach ($item['download_fields'] as $fieldname => $value) {
+          if ($value != '0') {
+            $fields .= $fieldname . ';';
+          }
         }
+      } else {
+        // When not saving from widget, save semicolon separated download_fields string
+        $fields = $item['download_fields'];
       }
+
       if ($fields != '') {
 
         if (!is_array($items)) {
