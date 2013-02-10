@@ -271,7 +271,7 @@ function download_download($bundle, $field_info) {
       $field_name = $instance['field_name'];
 
       if (!empty($instance['settings']['filename'])) {
-        $filename = _download_get_filename($instance['settings']['filename'], $entity);
+        $filename = _download_get_filename($instance['settings']['filename'], $entity, $entity_type);
       }
     }
   }
@@ -305,9 +305,9 @@ function download_download($bundle, $field_info) {
   exit();
 }
 
-function _download_get_filename($filename, $entity) {
+function _download_get_filename($filename, $entity, $entity_type) {
 
-  $fn = token_replace(check_plain($filename), array('entity'  => $entity));
+  $fn = token_replace(check_plain($filename), array($entity_type => $entity));
   $fn = preg_replace("/[^a-zA-Z0-9\.\-_]/", "", $fn);
 
   return $fn;
