@@ -104,6 +104,7 @@ function download_field_formatter_view($entity_type, $entity, $field, $instance,
           $fields = explode(';', $item['download_fields']);
 
           $valid_file_found = FALSE;
+          $fname = NULL;
           foreach ($fields as $fieldname) {
             if (isset($entity->{$fieldname})) {
 
@@ -111,6 +112,7 @@ function download_field_formatter_view($entity_type, $entity, $field, $instance,
                 foreach ($field_array as $file) {
                   if (file_valid_uri($file['uri'])) {
                     $valid_file_found = TRUE;
+                    $fname = $field['field_name'];
                     break;
                   }
                 }
@@ -122,7 +124,7 @@ function download_field_formatter_view($entity_type, $entity, $field, $instance,
             $element[$delta] = array(
               '#theme'   => 'link',
               '#text'    => $item['download_label'],
-              '#path'    => 'download/' . $bundle . '/' . $entity_type . '-' . $id . '-' . $delta,
+              '#path'    => 'download/' . $bundle . '/' . $entity_type . '-' . $fname . '-' . $id . '-' . $delta,
               '#options' => array('attributes' => array(), 'html' => FALSE),
             );
           }
@@ -247,7 +249,7 @@ function download_field_widget_error($element, $error, $form, &$form_state) {
 
 function download_download($bundle, $field_info) {
 
-  list($entity_type, $id, $delta) = explode('-', $field_info);
+  list($entity_type, $fieldname, $id, $delta) = explode('-', $field_info);
 
   $field_name = 'download';
   $files = array();
@@ -267,7 +269,7 @@ function download_download($bundle, $field_info) {
   foreach ($instances as $instance) {
     $field_info = field_info_field($instance['field_name']);
 
-    if ($field_info['type'] == 'download_link') {
+    if ($field_info['type'] == 'download_link' && $instance['field_name'] == $fieldname ) {
       $field_name = $instance['field_name'];
 
       if (!empty($instance['settings']['filename'])) {
