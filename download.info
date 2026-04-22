@@ -1,4 +1,6 @@
 name = Download
-description =  Provides a download link with compressed files
+description =  Provides a field type for a download link with compressed files.
 type = module
 backdrop = 1.x
+
+maintainers[indigoxela] = indigoxela
