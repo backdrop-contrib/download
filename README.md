@@ -2,7 +2,7 @@
 
 Provides a field type to build file downloads as single zipped file, collected
 from multiple file fields.
-Node authors can decide per node, from which fields the zip file gets
+Content authors can decide per entity, from which fields the zip file gets
 collected, and what the link text should be.
 
 Admins can decide, how the file name of that zip file is constructed using
@@ -17,6 +17,7 @@ tokens.
 
 - Install this module using the official 
   [Backdrop CMS instructions](https://docs.backdropcms.org/documentation/extend-with-modules)
+- Grant the "See download link" permission to appropriate roles.
 
 ## Issues
 
