@@ -18,6 +18,8 @@ tokens.
 - Install this module using the official 
   [Backdrop CMS instructions](https://docs.backdropcms.org/documentation/extend-with-modules)
 - Grant the "See download link" permission to appropriate roles.
+- Attach the "Download all files" field to the content types you need
+  combined zip download
 
 ## Issues
 
