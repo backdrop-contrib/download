@@ -4,6 +4,9 @@
  * Install function for the download module.
  */
 
+/**
+ * Implements hook_field_schema().
+ */
 function download_field_schema($field) {
   $columns = array(
     'download_fields' => array(

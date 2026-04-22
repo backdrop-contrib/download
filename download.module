@@ -5,6 +5,7 @@
  * Handles module administration and download link
  */
 
+define('DOWNLOAD_TEMP_DIR', 'download_temp');
 
 /**
  * Implements hook_menu().
@@ -61,19 +62,15 @@ function download_field_instance_settings_form($field, $instance) {
 
   $settings = $instance['settings'];
 
+  $token_tree_link = theme('token_tree_link', array(
+    'token_types' => array($instance['entity_type']),
+  ));
   $form['filename'] = array(
     '#type'          => 'textfield',
     '#title'         => t('Filename for the download'),
     '#default_value' => $settings['filename'],
+    '#description' => t('File name without extension.') . ' ' . $token_tree_link,
   );
-
-  if (module_exists('token')) {
-    $form['tokens'] = array(
-      '#theme'        => 'token_tree',
-      '#token_types'  => array($instance['entity_type']),
-      '#global_types' => FALSE,
-    );
-  }
 
   return $form;
 }
@@ -98,6 +95,9 @@ function download_field_formatter_view($entity_type, $entity, $field, $instance,
   $element = array();
   switch ($display['type']) {
     case 'download_link_formatter':
+      if (!user_access('see download link')) {
+        return;
+      }
       list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
       foreach ($items as $delta => $item) {
         if ($item['download_fields']) {
@@ -202,6 +202,9 @@ function download_field_widget_form(&$form, &$form_state, $field, $instance, $la
   return $element;
 }
 
+/**
+ * Implements hook_field_presave().
+ */
 function download_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
 
   $tmp_items = $items;
@@ -210,15 +213,18 @@ function download_field_presave($entity_type, $entity, $field, $instance, $langc
   foreach ($tmp_items as $key => $item) {
     if (isset($item['download_fields'])) {
       $fields = '';
-      // When saving with widget, transform array with download_fields to string
-      if(is_array($item['download_fields'])){
+      // When saving with widget, transform array with download_fields to
+      // string.
+      if (is_array($item['download_fields'])) {
         foreach ($item['download_fields'] as $fieldname => $value) {
           if ($value != '0') {
             $fields .= $fieldname . ';';
           }
         }
-      } else {
-        // When not saving from widget, save semicolon separated download_fields string
+      }
+      else {
+        // When not saving from widget, save semicolon separated download_fields
+        // string.
         $fields = $item['download_fields'];
       }
 
@@ -247,21 +253,25 @@ function download_field_widget_error($element, $error, $form, &$form_state) {
   }
 }
 
+/**
+ * Builds a zip file from files in fields.
+ *
+ * @param string $bundle
+ *   Bundle of entity type the fields are attached to.
+ * @param string $field_info
+ *   Combined information about field instance.
+ */
 function download_download($bundle, $field_info) {
+  if (!class_exists('ZipArchive')) {
+    // @todo test.
+    watchdog('download', 'Attempt to create download file failed because the Zip PHP extension is missing.', WATCHDOG_ERROR);
+  }
 
   list($entity_type, $fieldname, $id, $delta) = explode('-', $field_info);
 
   $field_name = 'download';
   $files = array();
-  $entity = array_shift(entity_load($entity_type, array($id)));
-
-  $lib_path = libraries_get_path('pclzip');
-  if (!is_dir($lib_path)) {
-    $uri_info = entity_uri($entity_type, $entity);
-    drupal_goto($uri_info['path']);
-  }
-
-  include $lib_path . '/pclzip.lib.php';
+  $entity = entity_load($entity_type, $id);
 
   $instances = field_info_instances($entity_type, $bundle);
   $filename = $entity_type . '-' . $id . '-' . $delta;
@@ -285,32 +295,68 @@ function download_download($bundle, $field_info) {
     if (isset($entity->{$fieldname})) {
       foreach ($entity->{$fieldname} as $field_array) {
         foreach ($field_array as $field) {
-          $files[] = drupal_realpath($field['uri']);
+          $files[] = backdrop_realpath($field['uri']);
         }
       }
     }
   }
 
+  $zip = new ZipArchive();
   $filename = $filename . '.zip';
-  $tmp_file = file_save_data('', 'temporary://' . $filename);
-  $tmp_file->status = 0;
-  $file = file_save($tmp_file);
-  $archive = new PclZip(drupal_realpath($file->uri));
-  $archive->add($files, PCLZIP_OPT_REMOVE_ALL_PATH);
+  $temp_dir = file_directory_temp() . '/' . DOWNLOAD_TEMP_DIR . '/' . backdrop_random_key(12);
+  file_prepare_directory($temp_dir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+  $destination = $temp_dir . '/' . $filename;
+  $zip->open($destination, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+  foreach ($files as $file_path) {
+    // Prevent file name collisions from different fields.
+    $file_copy = file_unmanaged_copy($file_path, $temp_dir);
+    $zip->addFile($file_copy, basename($file_copy));
+  }
+  $zip->close();
 
   module_invoke_all('download_download', $files, $entity);
 
   header("Content-Type: application/force-download");
   header('Content-Description: File Transfer');
   header('Content-Disposition: inline; filename=' . $filename);
-  readfile(drupal_realpath($file->uri));
+  readfile(backdrop_realpath($destination));
+
+  file_unmanaged_delete_recursive($temp_dir);
   exit();
 }
 
+/**
+ *
+ */
 function _download_get_filename($filename, $entity, $entity_type) {
 
   $fn = token_replace(check_plain($filename), array($entity_type => $entity));
-  $fn = preg_replace("/[^a-zA-Z0-9\.\-_]/", "", $fn);
+  $fn = transliteration_clean_filename($fn);
 
   return $fn;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function download_cron() {
+  $temp_dir = file_directory_temp() . '/' . DOWNLOAD_TEMP_DIR;
+  if (!is_dir($temp_dir)) {
+    return;
+  }
+  $subdirs = scandir($temp_dir);
+  if (empty($subdirs)) {
+    return;
+  }
+  foreach ($subdirs as $subdir) {
+    if ($subdir == '.' || $subdir == '..') {
+      continue;
+    }
+    $directory = $temp_dir . '/' . $subdir;
+    $five_min_ago = REQUEST_TIME - 300;
+    // Clean up but take care the directory isn't brand new.
+    if (filemtime($directory) < $five_min_ago) {
+      file_unmanaged_delete_recursive($directory);
+    }
+  }
 }
