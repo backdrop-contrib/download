@@ -326,10 +326,19 @@ function download_download($bundle, $field_info) {
 }
 
 /**
+ * Helper function to build a sanitzed file name.
  *
+ * @param string $filename
+ *   Configured file name, eventually with tokens.
+ * @param Node|EntityInterface $entity
+ *   Node or other Entity type object.
+ * @param string $entity_type
+ *   Type of entity, like "node".
+ *
+ * @return string
+ *   Clean file name with tokens replaced.
  */
 function _download_get_filename($filename, $entity, $entity_type) {
-
   $fn = token_replace(check_plain($filename), array($entity_type => $entity));
   $fn = transliteration_clean_filename($fn);
 
