@@ -345,9 +345,6 @@ function download_cron() {
     return;
   }
   $subdirs = scandir($temp_dir);
-  if (empty($subdirs)) {
-    return;
-  }
   foreach ($subdirs as $subdir) {
     if ($subdir == '.' || $subdir == '..') {
       continue;
