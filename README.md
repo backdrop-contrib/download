@@ -37,5 +37,4 @@ Created for Drupal by [Pierco](https://www.drupal.org/u/pierco).
 
 ## License
 
-This project is GPL v2 software. See the [LICENSE.txt](https://github.com/backdrop-contrib/i18n/blob/1.x-1.x/LICENSE.txt) 
-file in this directory for complete text.
+This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
