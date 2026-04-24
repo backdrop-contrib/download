@@ -24,3 +24,19 @@ function download_field_schema($field) {
     'columns' => $columns,
   );
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function download_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime' && !class_exists('ZipArchive')) {
+    $requirements['download_needs_zip'] = array(
+      'title' => t('Download needs PHP Zip'),
+      'value' => t('PHP Zip extension not available but required by the Download module.'),
+      'description' => t('Class ZipArchive not found. Make sure the extension is enabled in your PHP installation. Without it the Download module is not able to build zip files.'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  return $requirements;
+}
