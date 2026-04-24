@@ -1,8 +1,7 @@
 <?php
 /**
  * @file
- *
- * Handles module administration and download link
+ * Functions and hook implementations for the Download module.
  */
 
 define('DOWNLOAD_TEMP_DIR', 'download_temp');
@@ -47,7 +46,6 @@ function download_field_info() {
   );
 }
 
-
 /**
  * Implements hook_field_is_empty().
  */
@@ -86,7 +84,6 @@ function download_field_formatter_info() {
     ),
   );
 }
-
 
 /**
  * Implements hook_field_formatter_view().
@@ -135,7 +132,6 @@ function download_field_formatter_view($entity_type, $entity, $field, $instance,
   return $element;
 }
 
-
 /**
  * Implements hook_field_widget_info().
  */
@@ -147,7 +143,6 @@ function download_field_widget_info() {
     ),
   );
 }
-
 
 /**
  * Implements hook_field_widget_form().
@@ -240,7 +235,6 @@ function download_field_presave($entity_type, $entity, $field, $instance, $langc
     }
   }
 }
-
 
 /**
  * Implements hook_field_widget_error().
